@@ -51,7 +51,7 @@ Para ver el profiling por función del problema 2 con cProfile:
 python -m cProfile -s tottime problema2\problema2.py
 ```
 
-## Decisiones que tomé
+## Cambios 
 
 - **C para los problemas 1 y 3, Python para el 2.** El 1 y el 3 son cuadráticos o peores y en
   Python tardarían ~100 veces más. El 2 es lineal y corre bien en Python.
