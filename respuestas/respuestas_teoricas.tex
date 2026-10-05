@@ -1,0 +1,355 @@
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-noshorthands,es-tabla]{babel}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{titlesec}
+
+\DeclarePairedDelimiter{\floor}{\lfloor}{\rfloor}
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+
+\definecolor{fondo}{RGB}{243,243,241}
+\definecolor{azul}{RGB}{42,120,214}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{fondo},
+  frame=single, rulecolor=\color{fondo},
+  numbers=left, numberstyle=\tiny\color{gray},
+  xleftmargin=1.5em, framexleftmargin=1.5em,
+  columns=fullflexible, keepspaces=true,
+  literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ñ}{{\~n}}1
+}
+
+\titleformat{\section}{\Large\bfseries}{}{0em}{}[{\color{azul}\titlerule[1pt]}]
+\newcommand{\res}[1]{\textcolor{azul}{\textbf{#1}}}
+
+\title{Laboratorio 8 --- Respuestas teóricas}
+\author{Teoría de la Computación}
+\date{Octubre 2026}
+
+\begin{document}
+\maketitle
+
+\noindent Este documento incluye la parte (a) de los problemas 1, 2 y 3, el problema 4
+y el problema 5. Las partes (b) (implementación y profiling) están en el repositorio.
+
+% ======================================================
+\section*{Problema 1 (a)}
+
+\begin{lstlisting}[language=C]
+for (i = n/2; i <= n; i++)
+    for (j = 1; j+n/2 <= n; j++)
+        for (k = 1; k <= n; k = k*2)
+            counter++;
+\end{lstlisting}
+
+Los tres ciclos son independientes entre sí (ninguno depende de la variable del ciclo de
+afuera), así que el total es el producto de las vueltas de cada uno.
+
+\paragraph{Ciclo de $i$.} Va de $\floor{n/2}$ hasta $n$ de uno en uno:
+\[
+  \text{vueltas}_i = n - \floor{n/2} + 1 \approx \frac{n}{2} + 1
+\]
+
+\paragraph{Ciclo de $j$.} La condición $j + \floor{n/2} \le n$ es lo mismo que
+$j \le n - \floor{n/2}$, entonces:
+\[
+  \text{vueltas}_j = n - \floor{n/2} = \ceil{n/2} \approx \frac{n}{2}
+\]
+
+\paragraph{Ciclo de $k$.} $k$ toma los valores $1, 2, 4, \dots, 2^m$ mientras
+$2^m \le n$, o sea $m \le \log_2 n$:
+\[
+  \text{vueltas}_k = \floor{\log_2 n} + 1
+\]
+
+\paragraph{Total.}
+\[
+  T(n) = \bigl(n - \floor{n/2} + 1\bigr)\cdot\ceil{n/2}\cdot\bigl(\floor{\log_2 n} + 1\bigr)
+  \approx \frac{n}{2}\cdot\frac{n}{2}\cdot\log_2 n = \frac{n^2 \log_2 n}{4}
+\]
+Quitando constantes y términos de menor orden:
+\[
+  \res{$T(n) = O(n^2 \log n)$} \quad \text{(de hecho $\Theta(n^2\log n)$, porque la cota también es inferior).}
+\]
+
+\noindent Comprobación con el programa (el contador real coincide con la fórmula):
+\begin{center}
+\begin{tabular}{rcr}
+  \toprule
+  $n$ & fórmula & \texttt{counter} \\
+  \midrule
+  10   & $6 \cdot 5 \cdot 4 = 120$                 & 120 \\
+  100  & $51 \cdot 50 \cdot 7 = 17\,850$           & 17\,850 \\
+  1000 & $501 \cdot 500 \cdot 10 = 2\,505\,000$    & 2\,505\,000 \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+% ======================================================
+\section*{Problema 2 (a)}
+
+\begin{lstlisting}[language=C]
+if (n <= 1) return;
+for (i = 1; i <= n; i++)
+    for (j = 1; j <= n; j++) {
+        printf("Sequence\n");
+        break;
+    }
+\end{lstlisting}
+
+A primera vista parecen dos ciclos anidados de $n$ (lo que daría $n^2$), pero el
+\texttt{break} hace que el ciclo de $j$ se salga en la \textbf{primera} vuelta, siempre.
+Entonces el ciclo interno cuesta una constante $c$ (una comparación, un \texttt{printf} y el
+\texttt{break}).
+
+\begin{itemize}
+  \item Si $n \le 1$: solo se evalúa el \texttt{if} $\Rightarrow$ tiempo constante.
+  \item Si $n > 1$: el ciclo de $i$ da $n$ vueltas y cada una cuesta $c$.
+\end{itemize}
+\[
+  T(n) = c_0 + \sum_{i=1}^{n} c = c_0 + c\,n
+\]
+\[
+  \res{$T(n) = O(n)$} \quad \text{($\Theta(n)$: se imprimen exactamente $n$ líneas).}
+\]
+
+% ======================================================
+\section*{Problema 3 (a)}
+
+\begin{lstlisting}[language=C]
+for (i = 1; i <= n/3; i++)
+    for (j = 1; j <= n; j += 4)
+        printf("Sequence\n");
+\end{lstlisting}
+
+\paragraph{Ciclo de $i$.}
+\[
+  \text{vueltas}_i = \floor{n/3}
+\]
+
+\paragraph{Ciclo de $j$.} $j$ toma los valores $1, 5, 9, \dots, 1 + 4t$ mientras
+$1 + 4t \le n$, o sea $t \le (n-1)/4$:
+\[
+  \text{vueltas}_j = \floor*{\frac{n-1}{4}} + 1 = \ceil{n/4}
+\]
+
+\paragraph{Total.} El ciclo de $j$ no depende de $i$, entonces:
+\[
+  T(n) = \floor{n/3}\cdot\ceil{n/4} \approx \frac{n}{3}\cdot\frac{n}{4} = \frac{n^2}{12}
+\]
+\[
+  \res{$T(n) = O(n^2)$} \quad (\Theta(n^2)).
+\]
+Comprobación: con $n = 1000$ hay $333 \cdot 250 = 83\,250$ impresiones, que es lo que cuenta el
+programa. Con $n = 1$ no imprime nada porque $\floor{1/3} = 0$.
+
+% ======================================================
+\section*{Problema 4: mejor caso, caso promedio y peor caso}
+
+\subsection*{4.1 Búsqueda lineal}
+
+\begin{lstlisting}
+for i in 0..n-1:
+    if A[i] == x: return i
+return -1
+\end{lstlisting}
+
+Se cuenta el número de comparaciones \texttt{A[i] == x}.
+
+\begin{itemize}
+  \item \textbf{Mejor caso:} $x$ está en la primera posición $\Rightarrow$ 1 comparación
+        $\Rightarrow$ \res{$\Theta(1)$}.
+  \item \textbf{Peor caso:} $x$ está en la última posición o no está $\Rightarrow$ $n$
+        comparaciones $\Rightarrow$ \res{$\Theta(n)$}.
+  \item \textbf{Caso promedio:} suponiendo que $x$ está y que cada posición es igual de
+        probable ($1/n$), si está en la posición $i$ se hacen $i$ comparaciones:
+        \[
+          E[C] = \sum_{i=1}^{n} i \cdot \frac{1}{n} = \frac{1}{n}\cdot\frac{n(n+1)}{2} = \frac{n+1}{2}
+        \]
+        $\Rightarrow$ \res{$\Theta(n)$}. Si además $x$ puede no estar, el promedio queda entre
+        $\frac{n+1}{2}$ y $n$, y sigue siendo $\Theta(n)$.
+\end{itemize}
+
+\subsection*{4.2 Búsqueda binaria (arreglo ordenado)}
+
+\begin{lstlisting}
+lo = 0, hi = n-1
+while lo <= hi:
+    mid = (lo+hi)/2
+    if A[mid] == x: return mid
+    if A[mid] < x: lo = mid+1 else: hi = mid-1
+\end{lstlisting}
+
+\begin{itemize}
+  \item \textbf{Mejor caso:} $x$ está justo en el medio $\Rightarrow$ 1 comparación
+        $\Rightarrow$ \res{$\Theta(1)$}.
+  \item \textbf{Peor caso:} cada vuelta deja la mitad del rango:
+        \[
+          T(n) = T(n/2) + c \quad\Rightarrow\quad T(n) = c\,\bigl(\floor{\log_2 n} + 1\bigr)
+        \]
+        Después de $k$ vueltas quedan $n/2^k$ elementos; se acaba cuando $n/2^k < 1$, o sea
+        $k \approx \log_2 n$ $\Rightarrow$ \res{$\Theta(\log n)$}.
+  \item \textbf{Caso promedio:} se piensa la búsqueda como un árbol binario de decisión. Con
+        $n = 2^k - 1$, en el nivel $d$ hay $2^{d-1}$ elementos que se encuentran con $d$
+        comparaciones:
+        \[
+          E[C] = \frac{1}{n}\sum_{d=1}^{k} d\cdot 2^{d-1}
+               = \frac{(k-1)\,2^k + 1}{2^k - 1}
+               \approx k - 1 = \log_2(n+1) - 1
+        \]
+        $\Rightarrow$ \res{$\Theta(\log n)$}. Más de la mitad de los elementos está en el
+        último nivel, por eso el promedio es casi igual al peor caso.
+\end{itemize}
+
+\subsection*{4.3 Quicksort}
+
+Se elige un pivote, se particiona en $O(n)$ (aprox.\ $n$ comparaciones) y se ordenan las dos
+partes recursivamente. Si el pivote queda en la posición $q$:
+\[
+  T(n) = T(q) + T(n - 1 - q) + c\,n
+\]
+
+\begin{itemize}
+  \item \textbf{Mejor caso:} el pivote siempre parte el arreglo a la mitad:
+        \[
+          T(n) = 2T(n/2) + c\,n
+        \]
+        Por el teorema maestro ($a = 2$, $b = 2$, $f(n) = n = n^{\log_2 2}$) es el caso 2.
+        También se ve con el árbol de recursión: hay $\log_2 n$ niveles y cada nivel cuesta
+        $c\,n$ $\Rightarrow$ \res{$\Theta(n\log n)$}.
+  \item \textbf{Peor caso:} el pivote siempre es el mínimo o el máximo (por ejemplo, un arreglo
+        ya ordenado con pivote igual al último elemento):
+        \[
+          T(n) = T(n-1) + c\,n = c\,\bigl(n + (n-1) + \dots + 1\bigr) = c\,\frac{n(n+1)}{2}
+        \]
+        $\Rightarrow$ \res{$\Theta(n^2)$}.
+  \item \textbf{Caso promedio:} suponiendo que el pivote cae en cualquier posición con
+        probabilidad $1/n$:
+        \[
+          T(n) = c\,n + \frac{1}{n}\sum_{q=0}^{n-1}\bigl[T(q) + T(n-1-q)\bigr]
+               = c\,n + \frac{2}{n}\sum_{q=0}^{n-1} T(q)
+        \]
+        Multiplicando por $n$ y restando la misma ecuación para $n-1$:
+        \begin{align*}
+          n\,T(n) - (n-1)\,T(n-1) &= c\,(2n-1) + 2\,T(n-1) \\
+          \Rightarrow\quad n\,T(n) &= (n+1)\,T(n-1) + c\,(2n-1)
+        \end{align*}
+        Dividiendo entre $n(n+1)$:
+        \[
+          \frac{T(n)}{n+1} = \frac{T(n-1)}{n} + \frac{c\,(2n-1)}{n(n+1)}
+                           \le \frac{T(n-1)}{n} + \frac{2c}{n+1}
+        \]
+        Desenrollando la suma:
+        \[
+          \frac{T(n)}{n+1} \approx 2c\sum_{k=1}^{n}\frac{1}{k} = 2c\,H_n \approx 2c\ln n
+          \quad\Rightarrow\quad T(n) \approx 2c\,n\ln n \approx 1.39\,c\,n\log_2 n
+        \]
+        $\Rightarrow$ \res{$\Theta(n\log n)$}.
+\end{itemize}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lccc}
+  \toprule
+  Algoritmo & Mejor & Promedio & Peor \\
+  \midrule
+  Búsqueda lineal  & $\Theta(1)$        & $\Theta(n)$        & $\Theta(n)$ \\
+  Búsqueda binaria & $\Theta(1)$        & $\Theta(\log n)$   & $\Theta(\log n)$ \\
+  Quicksort        & $\Theta(n\log n)$  & $\Theta(n\log n)$  & $\Theta(n^2)$ \\
+  \bottomrule
+\end{tabular}
+\caption{Resumen del problema 4.}
+\end{table}
+
+% ======================================================
+\section*{Problema 5: verdadero o falso}
+
+\subsection*{a) Si $f(n) = \Theta(g(n))$ y $g(n) = \Theta(h(n))$, entonces $h(n) = \Theta(f(n))$. \quad \res{VERDADERO}}
+
+Por definición existen constantes positivas tales que, para $n \ge \max(n_1, n_2)$:
+\[
+  c_1\,g(n) \le f(n) \le c_2\,g(n)
+  \qquad\text{y}\qquad
+  d_1\,h(n) \le g(n) \le d_2\,h(n)
+\]
+Sustituyendo $g$ en la primera:
+\[
+  c_1 d_1\,h(n) \le f(n) \le c_2 d_2\,h(n) \quad\Rightarrow\quad f(n) = \Theta(h(n)) \quad\text{(transitividad)}
+\]
+Despejando $h$:
+\[
+  \frac{f(n)}{c_2 d_2} \le h(n) \le \frac{f(n)}{c_1 d_1} \quad\Rightarrow\quad h(n) = \Theta(f(n)) \quad\text{(simetría)}
+\]
+Las constantes $\frac{1}{c_2 d_2}$ y $\frac{1}{c_1 d_1}$ son positivas, así que se cumple la
+definición.
+
+\subsection*{b) Si $f(n) = O(g(n))$ y $g(n) = O(h(n))$, entonces $h(n) = \Omega(f(n))$. \quad \res{VERDADERO}}
+
+Existen $c, d > 0$ tales que, para $n$ suficientemente grande, $f(n) \le c\,g(n)$ y
+$g(n) \le d\,h(n)$. Entonces:
+\[
+  f(n) \le c\,d\,h(n) \quad\Rightarrow\quad h(n) \ge \frac{1}{cd}\,f(n)
+\]
+Eso es justo la definición de $h(n) = \Omega(f(n))$ con constante $\frac{1}{cd} > 0$.
+(En general, $f = O(h) \iff h = \Omega(f)$.)
+
+\subsection*{c) $f(n) = \Theta(n^2)$ para el programa \texttt{A(n)}. \quad \res{FALSO}, en realidad es $\Theta(n^3)$}
+
+\begin{lstlisting}[language=Python]
+atupla = tuple(range(0, n))
+S = set()
+for i in range(0, n):
+    for j in range(i + 1, n):
+        S.add(atupla[i:j])
+\end{lstlisting}
+
+Es cierto que el cuerpo del ciclo se ejecuta $\frac{n(n-1)}{2}$ veces, pero el cuerpo
+\textbf{no} es $O(1)$:
+\begin{enumerate}
+  \item \texttt{atupla[i:j]} crea una tupla \textbf{nueva} copiando $j - i$ elementos
+        $\Rightarrow \Theta(j - i)$.
+  \item \texttt{S.add(...)} tiene que calcular el hash de la tupla, y el hash de una tupla en
+        Python recorre todos sus elementos (y no se guarda en caché) $\Rightarrow \Theta(j - i)$.
+        Todas las tuplas son distintas, así que casi nunca hay que compararlas completas.
+\end{enumerate}
+
+Con $L = j - i$ (el largo de la tupla), para cada $L$ hay $n - L$ pares $(i, j)$ con ese
+largo:
+\begin{align*}
+  f(n) &= \Theta(n) + \sum_{i=0}^{n-1}\sum_{j=i+1}^{n-1}(j - i)
+        = \sum_{L=1}^{n-1} L\,(n - L) \\
+       &= n\cdot\frac{n(n-1)}{2} - \frac{(n-1)\,n\,(2n-1)}{6}
+        = \frac{n^3 - n}{6}
+\end{align*}
+\[
+  \res{$f(n) = \Theta(n^3)$}, \text{ entonces } f(n) \ne \Theta(n^2) \text{ y el enunciado es falso.}
+\]
+La memoria también es $\Theta(n^3)$, porque el set guarda todas esas tuplas.
+
+\paragraph{Comprobación experimental} (Python 3.14). Si $f$ fuera $\Theta(n^2)$, duplicar $n$
+multiplicaría el tiempo por 4; con $\Theta(n^3)$ lo multiplica por 8.
+
+\begin{center}
+\begin{tabular}{rrr}
+  \toprule
+  $n$ & tiempo (s) & razón vs.\ $n/2$ \\
+  \midrule
+  100 & 0.0028 & --- \\
+  200 & 0.0290 & $\times 10.3$ \\
+  400 & 0.1894 & $\times 6.5$ \\
+  800 & 1.5941 & $\times 8.4$ \\
+  \bottomrule
+\end{tabular}
+\end{center}
+La razón queda alrededor de 8, lo que confirma el comportamiento cúbico.
+
+\end{document}
